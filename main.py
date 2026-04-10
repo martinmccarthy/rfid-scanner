@@ -3,7 +3,6 @@ from machine import Pin
 from rfidscannerthing import RFIDReader, PresenceSwitch, AudioSystem, LightSystem, VaultController
 import utime
 
-# --- Pin config (matches blink.py) ---
 SPI_ID = 0
 SCK    = 18
 MISO   = 16
@@ -11,9 +10,11 @@ MOSI   = 19
 CS     = 17
 RST    = 9
 
-# --- Set this to the UID of your authorised card ---
-# Run blink.py first, tap your card, and paste the hex string here.
 EXPECTED_UID = "[0x32, 0xA1, 0x27, 0x5B]"
+
+BUZZER_PIN  = 22
+GREEN_PIN   = 20
+RED_PIN     = 21
 
 
 class HardwareRFIDReader(RFIDReader):
@@ -23,7 +24,6 @@ class HardwareRFIDReader(RFIDReader):
         self._last_uid = None
 
     def poll(self):
-        """Call each tick. Returns hex UID string if a card is present, else None."""
         self._reader.init()
         stat, _ = self._reader.request(self._reader.REQIDL)
         if stat == self._reader.OK:
@@ -39,7 +39,6 @@ class HardwareRFIDReader(RFIDReader):
 
 
 class HardwarePresenceSwitch(PresenceSwitch):
-    """Treats card presence (from the shared reader poll) as the switch state."""
     def __init__(self, slot_id, reader: HardwareRFIDReader):
         super().__init__(slot_id)
         self._reader = reader
@@ -50,11 +49,6 @@ class HardwarePresenceSwitch(PresenceSwitch):
 
     def is_pressed(self):
         return self._present
-
-
-BUZZER_PIN  = 22
-GREEN_PIN   = 20
-RED_PIN     = 21
 
 
 class HardwareAudioSystem(AudioSystem):
@@ -97,7 +91,6 @@ class HardwareLightSystem(LightSystem):
             utime.sleep_ms(interval_ms)
 
 
-# --- Build hardware objects ---
 reader  = HardwareRFIDReader(1)
 switch  = HardwarePresenceSwitch(1, reader)
 audio   = HardwareAudioSystem()
@@ -117,6 +110,6 @@ controller = VaultController(
 print("Ready. Tap a card...")
 
 while True:
-    switch.update()          # poll SPI, update presence + last UID
-    controller.tick()        # run vault logic
+    switch.update()
+    controller.tick()
     utime.sleep_ms(50)
